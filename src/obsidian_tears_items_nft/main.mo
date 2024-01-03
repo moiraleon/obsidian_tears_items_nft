@@ -32,6 +32,9 @@ import ExtNonFungible "motoko/ext/NonFungible";
 import SVG "svg";
 import Env "env";
 
+import Now  "mo:base/Time"; // TODO: confirm if duplicate of line 20 and remove
+import  setTimer; recurringTimer "mo:base/Timer";
+
 actor class ObsidianTearsItems() = this {
 
   // Types
@@ -148,7 +151,8 @@ actor class ObsidianTearsItems() = this {
   let CapService = Cap.Cap(?"lj532-6iaaa-aaaah-qcc7a-cai", capRootBucketId);
   private stable var _capEventsState : [CapIndefiniteEvent] = [];
   private var _capEvents : List.List<CapIndefiniteEvent> = List.fromArray(_capEventsState);
-  private stable var _runHeartbeat : Bool = true;
+  //private stable var _runHeartbeat : Bool = true;
+  private stable var _runTimer : Bool = true;
 
   type AssetHandle = Text;
   type Asset = {
@@ -560,18 +564,33 @@ actor class ObsidianTearsItems() = this {
     _failedSales;
   };
   //EXTv2 SALE
-  system func heartbeat() : async () {
-    if (_runHeartbeat == true) {
+  // system func heartbeat() : async () {
+  //   if (_runHeartbeat == true) {
+  //     try {
+  //       await cronSalesSettlements();
+  //       await cronDisbursements();
+  //       await cronSettlements();
+  //       await cronCapEvents();
+  //     } catch (e) {
+  //       _runHeartbeat := false;
+  //     };
+  //   };
+  // };
+
+  system func timer(setGlobalTimer : Nat64 -> ()) : async () {
+  let next = Nat64.fromIntWrap(Time.now()) + 3_000_000_000; //nanoseconds || 3 seconds
+  setGlobalTimer(next);
+      if (_runTimer == true) {
       try {
         await cronSalesSettlements();
         await cronDisbursements();
         await cronSettlements();
         await cronCapEvents();
       } catch (e) {
-        _runHeartbeat := false;
+        _runTimer := false;
       };
     };
-  };
+}
   public shared (msg) func cronDisbursements() : async () {
     var _cont : Bool = true;
     while (_cont) {
@@ -629,8 +648,10 @@ actor class ObsidianTearsItems() = this {
       unlockedSettlements().size(),
     ];
   };
-  public query func isHeartbeatRunning() : async Bool {
-    _runHeartbeat;
+  //public query func isHeartbeatRunning() : async Bool {
+  public query func isTimerRunning() : async Bool {
+    //_runHeartbeat;
+    _runTimer;
   };
   //Listings
   //EXTv2 SALE
@@ -937,21 +958,29 @@ actor class ObsidianTearsItems() = this {
     };
     historicExportHasRun;
   };
-  public shared (msg) func adminKillHeartbeat() : async () {
+  //public shared (msg) func adminKillHeartbeat() : async () {
+  public shared (msg) func adminKillTimer() : async () {
     assert (msg.caller == _minter);
-    _runHeartbeat := false;
+    //_runHeartbeat := false;
+    _runTimer := false;
   };
-  public shared (msg) func adminStartHeartbeat() : async () {
+  //public shared (msg) func adminStartHeartbeat() : async () {
+  public shared (msg) func adminStartTimer() : async () {
     assert (msg.caller == _minter);
-    _runHeartbeat := true;
+    //_runHeartbeat := true;
+    _runTimer := true;
   };
-  public shared (msg) func adminKillHeartbeatExtra(p : Text) : async () {
+  //public shared (msg) func adminKillHeartbeatExtra(p : Text) : async () {
+  public shared (msg) func adminKillTimerExtra(p : Text) : async () {
     assert (p == "thisisthepassword");
-    _runHeartbeat := false;
+   //_runHeartbeat := false;
+    _runTimer := false;
   };
-  public shared (msg) func adminStartHeartbeatExtra(p : Text) : async () {
+  //public shared (msg) func adminStartHeartbeatExtra(p : Text) : async () {
+  public shared (msg) func adminStartTimerExtra(p : Text) : async () {
     assert (p == "thisisthepassword");
-    _runHeartbeat := true;
+    //_runHeartbeat := true;
+    _runTimer := true;
   };
 
   public shared (msg) func setMinter(minter : Principal) : async () {
